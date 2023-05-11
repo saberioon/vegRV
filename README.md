@@ -46,14 +46,13 @@ poetry shell
 python steropeswp4.py -i Input Folder -o Output Folder -c Colorspace {hsv, hls, yiq}
 ```
 
-options:
-  -h, --help            show this help message and exit /n
-  -i INPUT, --input INPUT /n
-                        input folder /n
-  -o OUTPUT, --output OUTPUT /n
-                        output folder /n
-  -c COLORSPACE, --colorspace COLORSPACE /n
-                        colorspace hsv, hls, yiq /n
+### options:
+  -h, --help            show this help message and exit 
+  -i INPUT, --input INPUT   input folder
+
+  -o OUTPUT, --output OUTPUT output folder 
+
+  -c COLORSPACE, --colorspace COLORSPACE  colorspace hsv, hls, yiq 
 
 ## Additional Notes
 
