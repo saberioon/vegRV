@@ -1,6 +1,7 @@
 # STEROPES-WP4
     
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7925046.svg)](https://doi.org/10.5281/zenodo.7925046)
+
 [![License: EUPL-1.2](https://img.shields.io/badge/License-EUPL%20v1.2-blue.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
 
 Command-line software for segmenting segment the vegetation from the RGB image
@@ -72,4 +73,4 @@ this software is released under EUROPEAN UNION PUBLIC LICENCE v. 1.2
 
 This work was supported by the European Union’s Horizon H2020 research and innovation European Joint Programme Cofund on Agricultural Soil Management (EJP-SOIL grant number 862695) and was carried out in the framework of the STEROPES of EJP-SOIL
 
-
+[![SteropesLogo](https://github.com/saberioon/vegRV/blob/main/figs/steropesLogo.jpg)]()
