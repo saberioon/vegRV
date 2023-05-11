@@ -30,7 +30,7 @@ import json
 # --------------for logging all messages ---------------
 import datetime
 
-VERSION = "0.0.1"
+VERSION = "1.0.0"
 dt = datetime.datetime.now()
 tmark = dt.strftime("%Y-%m-%d %H:%M:%S")
 
