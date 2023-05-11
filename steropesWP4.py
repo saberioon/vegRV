@@ -103,6 +103,22 @@ def im2double_func(img):
 
 
 def change_colorspace(img, to_save_or_not, output_folder, output_save_name, colorspace):
+    """
+    Convert the color space of the input image.
+
+    Args:
+        img (numpy.ndarray): Input image array.
+        to_save_or_not (bool): Flag indicating whether to save the converted image.
+        output_folder (str): Output folder path for saving the converted image.
+        output_save_name (str): Output save name for the converted image.
+        colorspace (str): Color space to convert the image to. Supported values: 'hsv', 'hls', 'yiq'.
+
+    Returns:
+        numpy.ndarray: The converted image array.
+
+    Raises:
+        ValueError: If the specified colorspace is not supported.
+    """
     log_message("Colorspace conversion to {}...".format(colorspace))
     converted_img = np.zeros_like(img)
 
@@ -125,42 +141,27 @@ def change_colorspace(img, to_save_or_not, output_folder, output_save_name, colo
     return converted_img
 
 
-
-# def change_colorspace(img, to_save_or_not, output_folder, output_save_name, color_space='hls'):
-#     log_message("Colorspace conversion ...")
-#     hsv = np.zeros_like(img)
-#     hls = np.zeros_like(img)
-#     yiq = np.zeros_like(img)
-
-#     for i in range(img.shape[0]):
-#         for j in range(img.shape[1]):
-#             r, g, b = img[i, j]
-#             hsv[i, j] = colorsys.rgb_to_hsv(r, g, b)
-#             hls[i, j] = colorsys.rgb_to_hls(r, g, b)
-#             yiq[i, j] = colorsys.rgb_to_yiq(r, g, b)
-#     if to_save_or_not:
-#         filename = os.path.join(output_folder, output_save_name + '_hsv.jpg')
-#         cv2.imwrite(filename, hsv[::-1, ::-1] * 255)
-
-#         filename = os.path.join(output_folder, output_save_name + '_hls.jpg')
-#         cv2.imwrite(filename, hls[::-1, ::-1] * 255)
-
-#         filename = os.path.join(output_folder, output_save_name + '_yiq.jpg')
-#         cv2.imwrite(filename, yiq[::-1, ::-1] * 255)
-
-#     log_message("Colorspace conversion completed")
-#     return hsv, hls, yiq
-
-
-
-
-
-
 def kmeans_clustering(img, n_of_clusters, init_value, to_save_or_not, output_save_name):
-  '''
-    init_value must be either 'random' or 'k-means++' (default)
-    to_save_or_not: True or False
-  '''
+  """
+    Perform k-means clustering on the input image.
+
+    Args:
+        img (numpy.ndarray): Input image array.
+        n_of_clusters (int): Number of clusters to create.
+        init_value (str): Initialization method for cluster centers. Supported values: 'random', 'k-means++'.
+        to_save_or_not (bool): Flag indicating whether to save the clustered image.
+        output_save_name (str): Output save name for the clustered image.
+
+    Returns:
+        numpy.ndarray: The clustered image array.
+
+    Raises:
+        ValueError: If an unsupported init_value is provided.
+
+    Notes:
+        - Supported values for init_value: 'random' or 'k-means++' (default).
+        - The clustered image is saved if to_save_or_not is True.
+    """
   log_message("kmeans clustering ...")
   kmeans = KMeans(n_clusters=n_of_clusters, init = init_value).fit(np.reshape(img,(-1,img.shape[2])))
   clustered_img = np.reshape(kmeans.predict(np.reshape(img,(-1,img.shape[2]))), img.shape[:-1])
@@ -174,56 +175,48 @@ def kmeans_clustering(img, n_of_clusters, init_value, to_save_or_not, output_sav
 
 
 def fuzzy_cmans_automatic_Th(img, n_of_clusters, to_save_or_not, output_save_name):
-  log_message("fuzzy cmeans clustering ...")
-  img_shape = img.shape
-  if len(img_shape) < 3:
-    img = np.expand_dims(img, axis=2)
-  cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.reshape(img,(-1,img.shape[2])), n_of_clusters, 2, error=0.005, maxiter=1000, init=None)
-  cluster1 = np.reshape(cntr[0,:], img.shape[:-1])
-  cluster2 = np.reshape(cntr[1,:], img.shape[:-1])
+    """
+        Perform fuzzy c-means clustering on the input image.
 
-  cluster1_img = np.zeros((img.shape[0], img.shape[1]))
-  cluster2_img = np.zeros((img.shape[0], img.shape[1]))
+        Args:
+            img (numpy.ndarray): Input image array.
+            n_of_clusters (int): Number of clusters for the clustering algorithm.
+            to_save_or_not (bool): Flag indicating whether to save the resulting cluster images.
+            output_save_name (str): Output save name for the cluster images.
 
-  val1 = filters.threshold_otsu(cluster1)
-  cluster1_img[cluster1 < val1]=1
+        Returns:
+            tuple: A tuple containing the cluster images and the cluster centers.
+                  The first element is the cluster 1 image, the second element is the cluster 2 image,
+                  and the third element is the cluster centers array.
+    """
 
-  val2 = filters.threshold_otsu(cluster2)
-  cluster2_img[cluster2 < val2]=1
+    log_message("fuzzy cmeans clustering ...")
+    img_shape = img.shape
+    if len(img_shape) < 3:
+      img = np.expand_dims(img, axis=2)
+    cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.reshape(img,(-1,img.shape[2])), n_of_clusters, 2, error=0.005, maxiter=1000, init=None)
+    cluster1 = np.reshape(cntr[0,:], img.shape[:-1])
+    cluster2 = np.reshape(cntr[1,:], img.shape[:-1])
 
-  if to_save_or_not:
-    filename = output_save_name + '_cluster1.jpg'
-    cv2.imwrite(filename, cluster1_img[::-1,::-1])
+    cluster1_img = np.zeros((img.shape[0], img.shape[1]))
+    cluster2_img = np.zeros((img.shape[0], img.shape[1]))
 
-    filename = output_save_name + '_cluster2.jpg'
-    cv2.imwrite(filename, cluster2_img[::-1,::-1])
-  log_message("fuzzy cmeans clustering completed")
-  return cluster1_img, cluster2_img, cntr
+    val1 = filters.threshold_otsu(cluster1)
+    cluster1_img[cluster1 < val1]=1
+
+    val2 = filters.threshold_otsu(cluster2)
+    cluster2_img[cluster2 < val2]=1
+
+    if to_save_or_not:
+      filename = output_save_name + '_cluster1.jpg'
+      cv2.imwrite(filename, cluster1_img[::-1,::-1])
+
+      filename = output_save_name + '_cluster2.jpg'
+      cv2.imwrite(filename, cluster2_img[::-1,::-1])
+    log_message("fuzzy cmeans clustering completed")
+    return cluster1_img, cluster2_img, cntr
 
 
-# def fuzzy_cmans_automatic_Th(img, n_of_clusters, to_save_or_not, output_save_name):
-#   log_message("fuzzy cmeans clustering ...")
-#   cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.reshape(img,(-1,img.shape[2])), n_of_clusters, 2, error=0.005, maxiter=1000, init=None)
-#   cluster1 = np.reshape(cntr[0,:], img.shape[:-1])
-#   cluster2 = np.reshape(cntr[1,:], img.shape[:-1])
-
-#   cluster1_img = np.zeros((img.shape[0], img.shape[1]))
-#   cluster2_img = np.zeros((img.shape[0], img.shape[1]))
-
-#   val1 = filters.threshold_otsu(cluster1)
-#   cluster1_img[cluster1 < val1]=1
-
-#   val2 = filters.threshold_otsu(cluster2)
-#   cluster2_img[cluster2 < val2]=1
-
-#   if to_save_or_not:
-#     filename = output_save_name + '_cluster1.jpg'
-#     cv2.imwrite(filename, cluster1_img[::-1,::-1])
-
-#     filename = output_save_name + '_cluster2.jpg'
-#     cv2.imwrite(filename, cluster2_img[::-1,::-1])
-#   log_message("fuzzy cmeans clustering completed")
-#   return cluster1_img, cluster2_img
 
 # ------------------------------------------------plotting 
 
@@ -243,8 +236,6 @@ def plotter(target, val, bins_center, hist):
     plt.tight_layout()
     #plt.show()
     log_message("Plotting completed")   
-
-
 
 
 
@@ -274,11 +265,8 @@ if __name__ == "__main__":
         img = im2double_func(img)
         #hsv, hls, yiq = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0])
         converted_img = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0], args.colorspace)
-        clustered_img = kmeans_clustering(converted_img, 2 , 'random', True, 'img')
-        # clustered_hls = kmeans_clustering(hls, 2 , 'random', True, 'hls')
-        # clustered_hsv = kmeans_clustering(hsv, 2 , 'random', True, 'hsv')
-        # clustered_yiq = kmeans_clustering(yiq, 2 , 'random', True, 'yiq')
-        img_cluster1, img_cluster2, cntr = fuzzy_cmans_automatic_Th(clustered_img, 2, True, args.colorspace)
+        clustered_img = kmeans_clustering(converted_img, 2 , 'random', False, 'img')
+        img_cluster1, img_cluster2, cntr = fuzzy_cmans_automatic_Th(clustered_img, 2, False, args.colorspace)
         #cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.reshape(img,(-1,img.shape[2])), 2, 2, error=0.005, maxiter=1000, init=None)
         cluster1 = np.reshape(cntr[0,:], converted_img.shape[:-1])
         cluster2 = np.reshape(cntr[1,:], converted_img.shape[:-1]) 
@@ -301,81 +289,5 @@ if __name__ == "__main__":
 
 
 
-
-
-# if __name__ == "__main__":
-#     parser = parse_arg()
-#     args = parser.parse_args()
-
-#     input_folder = args.input
-#     output_folder = args.output
-
-#     filenames = []
-
-#     # Searching for filenames
-#     for root, directories, files in os.walk(input_folder):
-#         for fn in files:
-#             basename, ext = fn.rsplit('.', 1)
-#             if ext == 'jpeg' or ext == 'jpg' or ext == 'png' or ext == 'tif':
-#                 filenames.append(os.path.join(root, fn))
-
-#     print("Filenames:", len(filenames))
-
-
-
-# for count, fin in enumerate(filenames):
-
-#     img = imread_func(fin, True)
-#     img = im2double_func(img)
-#     hsv, hls, yiq = change_colorspace(img, True, 'img_')
-#     clustered_img = kmeans_clustering(img, 2 , 'random', True, 'img')
-#     clustered_hls = kmeans_clustering(hls, 2 , 'random', True, 'hls')
-#     clustered_hsv = kmeans_clustering(hsv, 2 , 'random', True, 'hsv')
-#     clustered_yiq = kmeans_clustering(yiq, 2 , 'random', True, 'yiq')
-#     hls_cluster1, hls_cluster2 = fuzzy_cmans_automatic_Th(hls, 2, True, 'hls')
-#     cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.reshape(hls,(-1,hls.shape[2])), 2, 2, error=0.005, maxiter=1000, init=None)
-#     cluster1 = np.reshape(cntr[0,:], hls.shape[:-1])
-#     cluster2 = np.reshape(cntr[1,:], hls.shape[:-1]) 
-#     target = cluster1
-#     val = filters.threshold_otsu(target)
-#     hist, bins_center = exposure.histogram(target)
-#     plotter(target, val, bins_center, hist)
-
-
-#     update_progress("Progress...{}/{}".format(count+1, len(filenames)))
-#     # update_progress("Progress...", 1.0)
-
-# print()
-# print("DONE!")
-
-
-
-
-
-# # --------- apply function to batch
-# for count, fin in enumerate(filenames):
-
-#     img = imread_func(fin, True)
-#     img = im2double_func(img)
-#     hsv, hls, yiq = change_colorspace(img, True, 'img_')
-#     clustered_img = kmeans_clustering(img, 2 , 'random', True, 'img')
-#     clustered_hls = kmeans_clustering(hls, 2 , 'random', True, 'hls')
-#     clustered_hsv = kmeans_clustering(hsv, 2 , 'random', True, 'hsv')
-#     clustered_yiq = kmeans_clustering(yiq, 2 , 'random', True, 'yiq')
-#     hls_cluster1, hls_cluster2 = fuzzy_cmans_automatic_Th(hls, 2, True, 'hls')
-#     cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.reshape(hls,(-1,hls.shape[2])), 2, 2, error=0.005, maxiter=1000, init=None)
-#     cluster1 = np.reshape(cntr[0,:], hls.shape[:-1])
-#     cluster2 = np.reshape(cntr[1,:], hls.shape[:-1]) 
-#     target = cluster1
-#     val = filters.threshold_otsu(target)
-#     hist, bins_center = exposure.histogram(target)
-#     plotter(target, val, bins_center, hist)
-
-
-#     update_progress("Progress...{}/{}".format(count, len(filenames)), count / len(filenames))
-#     # update_progress("Progress...", 1.0)
-
-# print()
-# print("DONE!")
 
 
