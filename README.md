@@ -40,9 +40,20 @@ To run your command-line software, follow these steps:
 ```bash
 poetry shell
 ```
+3. run the commandline software using this command 
 
+```bash
+python steropeswp4.py -i Input Folder -o Output Folder -c Colorspace {hsv, hls, yiq}
+```
 
-
+options:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        input folder
+  -o OUTPUT, --output OUTPUT
+                        output folder
+  -c COLORSPACE, --colorspace COLORSPACE
+                        colorspace hsv, hls, yiq
 
 ## Additional Notes
 
