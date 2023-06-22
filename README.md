@@ -6,6 +6,13 @@
 
 Command-line software for segmenting segment the vegetation from the RGB image
 
+## New Features
+
+* Calculating percentage of each cluster and report in a csv file for all images in one folder 
+
+
+
+
 ## Installation
 
 To install and set up your command-line software and its dependencies, follow these steps:
