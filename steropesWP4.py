@@ -31,7 +31,10 @@ import csv
 # --------------for logging all messages ---------------
 import datetime
 
-VERSION = "1.0.1"
+from version import version
+
+print(f"vegRV v{version}")
+
 dt = datetime.datetime.now()
 tmark = dt.strftime("%Y-%m-%d %H:%M:%S")
 
