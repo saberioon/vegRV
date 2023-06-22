@@ -1,0 +1,38 @@
+{
+ "build": "py310h6c44a92_3",
+ "build_number": 3,
+ "channel": "https://repo.anaconda.com/pkgs/main/osx-64",
+ "constrains": [],
+ "depends": [
+  "blas * openblas",
+  "libcxx >=12.0.0",
+  "libopenblas >=0.3.20,<1.0a0",
+  "numpy-base 1.21.5 py310h8a30af7_3",
+  "python >=3.10,<3.11.0a0"
+ ],
+ "extracted_package_dir": "",
+ "features": "",
+ "files": [],
+ "fn": "numpy-1.21.5-py310h6c44a92_3.conda",
+ "legacy_bz2_md5": "9039f5c1b6be3f26a0ff1accba250b31",
+ "license": "BSD-3-Clause",
+ "link": {
+  "source": "",
+  "type": 1
+ },
+ "md5": "a6ea64c4e9163d6539c13a2446ec9719",
+ "name": "numpy",
+ "package_tarball_full_path": "",
+ "paths_data": {
+  "paths": [],
+  "paths_version": 1
+ },
+ "requested_spec": "None",
+ "sha256": "201115c390fb091919025534c41189f3d06bb913e042610a7a7862962ad7fa13",
+ "size": 10914,
+ "subdir": "osx-64",
+ "timestamp": 1653918947448,
+ "track_features": "",
+ "url": "https://repo.anaconda.com/pkgs/main/osx-64/numpy-1.21.5-py310h6c44a92_3.conda",
+ "version": "1.21.5"
+}

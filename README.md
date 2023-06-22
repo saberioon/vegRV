@@ -74,3 +74,19 @@ this software is released under EUROPEAN UNION PUBLIC LICENCE v. 1.2
 This work was supported by the European Union’s Horizon H2020 research and innovation European Joint Programme Cofund on Agricultural Soil Management (EJP-SOIL grant number 862695) and was carried out in the framework of the STEROPES of EJP-SOIL
 
 [![SteropesLogo](https://github.com/saberioon/vegRV/blob/main/figs/steropesLogo.jpg)]()
+
+
+## Citation
+
+If you find this code useful in your research or work, please consider citing it:
+
+
+```bash
+@software{vegRV,
+author = {M. Saberioon},
+title = {vegRV: A Command-Line Software for segmenting plant residual from RGB images},
+year = {2023},
+url = {https://github.com/saberioon/vegRV
+doi = {10.5281/zenodo.7925046}
+}
+```

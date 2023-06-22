@@ -4,7 +4,7 @@ Author: Mohammadmhedi Saberioon
 email: mohammadmehdi.saberioon@ilvo.vlanderen.be \n
 Description: This code is developed for the WP4 of the Steropes project.
 The main goal of this code is to segment the vegetation from the RGB images. \n 
-Date: 2023-03-15  \n
+Date: 2023-06-22  \n
 """
 
 
@@ -26,11 +26,12 @@ import skfuzzy as fuzz
 import sys
 import time
 import os
-import json
+#import json
+import csv
 # --------------for logging all messages ---------------
 import datetime
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 dt = datetime.datetime.now()
 tmark = dt.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -218,6 +219,27 @@ def fuzzy_cmans_automatic_Th(img, n_of_clusters, to_save_or_not, output_save_nam
 
 
 
+
+def calculate_cluster_percentages(cluster1_img, cluster2_img):
+    """
+    Calculate the percentage of each cluster in the image.
+
+    Args:
+        cluster1_img (numpy.ndarray): Image of cluster 1.
+        cluster2_img (numpy.ndarray): Image of cluster 2.
+
+    Returns:
+        dict: Dictionary containing the percentage of each cluster.
+    """
+    total_pixels = cluster1_img.size + cluster2_img.size
+    cluster1_percentage = (cluster1_img.sum() / total_pixels) * 100
+    cluster2_percentage = (cluster2_img.sum() / total_pixels) * 100
+
+    return {
+        'Cluster 1': cluster1_percentage,
+        'Cluster 2': cluster2_percentage
+    }
+
 # ------------------------------------------------plotting 
 
 def plotter(target, val, bins_center, hist):
@@ -248,6 +270,11 @@ if __name__ == "__main__":
     input_folder = args.input
     output_folder = args.output
 
+    # Create output folder if it does not exist
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+        print("Created output folder:", output_folder)  # Print the path of the output folder
+
     # Searching for filenames
     filenames = []
     for root, directories, files in os.walk(input_folder):
@@ -261,15 +288,29 @@ if __name__ == "__main__":
     # Rest of the code
     for count, fin in enumerate(filenames):
         # Perform image processing operations
+        filename = os.path.splitext(os.path.basename(fin))[0]  # Get the filename without extension
         img = imread_func(fin, True)
         img = im2double_func(img)
-        #hsv, hls, yiq = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0])
+        # hsv, hls, yiq = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0])
         converted_img = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0], args.colorspace)
-        clustered_img = kmeans_clustering(converted_img, 2 , 'random', False, 'img')
+        clustered_img = kmeans_clustering(converted_img, 2, 'random', False, 'img')
+
         img_cluster1, img_cluster2, cntr = fuzzy_cmans_automatic_Th(clustered_img, 2, False, args.colorspace)
-        #cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.reshape(img,(-1,img.shape[2])), 2, 2, error=0.005, maxiter=1000, init=None)
-        cluster1 = np.reshape(cntr[0,:], converted_img.shape[:-1])
-        cluster2 = np.reshape(cntr[1,:], converted_img.shape[:-1]) 
+
+        # Calculate cluster percentages
+        percentages = calculate_cluster_percentages(img_cluster1, img_cluster2)
+
+        # Export percentages to CSV file
+        csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
+        with open(csv_filename, 'a', newline='') as csvfile:
+            fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            if count == 0:
+                writer.writeheader()
+            writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
+
+        cluster1 = np.reshape(cntr[0, :], converted_img.shape[:-1])
+        cluster2 = np.reshape(cntr[1, :], converted_img.shape[:-1])
         target = cluster1
         val = filters.threshold_otsu(target)
         hist, bins_center = exposure.histogram(target)
@@ -278,12 +319,103 @@ if __name__ == "__main__":
         # Save the plots
         plt.savefig(os.path.join(output_folder, "plot_{}.png".format(count)))
 
-
         update_progress("Progress...{}/{}".format(count + 1, len(filenames)), (count + 1) / len(filenames))
-
 
     print()
     print("DONE!")
+
+
+
+
+
+
+
+#  if __name__ == "__main__":
+#     parser = parse_arg()
+#     args = parser.parse_args()
+
+#     input_folder = args.input
+#     output_folder = args.output
+
+
+#     # Create output folder if it does not exist
+#     if not os.path.exists(output_folder):
+#         os.makedirs(output_folder)
+#         print("Created output folder:", output_folder)  # Print the path of the output folder
+
+
+#     # Searching for filenames
+#     filenames = []
+#     for root, directories, files in os.walk(input_folder):
+#         for fn in files:
+#             basename, ext = fn.rsplit('.', 1)
+#             if ext.lower() in ['jpeg', 'jpg', 'png', 'tif']:
+#                 filenames.append(os.path.join(root, fn))
+
+#     print("File #:", len(filenames))
+
+#     # Rest of the code
+#     for count, fin in enumerate(filenames):
+#         # Perform image processing operations
+#         filename = os.path.splitext(os.path.basename(fin))[0]  # Get the filename without extension
+#         img = imread_func(fin, True)
+#         img = im2double_func(img)
+#         #hsv, hls, yiq = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0])
+#         converted_img = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0], args.colorspace)
+#         clustered_img = kmeans_clustering(converted_img, 2 , 'random', False, 'img')
+        
+#         img_cluster1, img_cluster2, cntr = fuzzy_cmans_automatic_Th(clustered_img, 2, False, args.colorspace)
+#         #cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.reshape(img,(-1,img.shape[2])), 2, 2, error=0.005, maxiter=1000, init=None)
+        
+#         # Calculate the cluster percentages
+#         # cluster1_percentage = calculate_cluster_percentage(img_cluster1)
+#         # cluster2_percentage = calculate_cluster_percentage(img_cluster2)
+
+#         # Calculate cluster percentages
+#         percentages = calculate_cluster_percentages(img_cluster1, img_cluster2)
+
+#         # # Export percentages to CSV file
+#         # csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
+#         # with open(csv_filename, 'w', newline='') as csvfile:
+#         #    fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
+#         #    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+#         #    writer.writeheader()
+#         #    writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
+
+
+#         csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
+
+#         # Create the CSV file and write the header row
+#         with open(csv_filename, 'w', newline='') as csvfile:
+#             fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
+#             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+#             writer.writeheader()
+
+#             # Loop over the image files and write the cluster percentages to the CSV file
+#             for filename, percentages in results.items():
+#                 writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
+
+
+#         # Print the cluster percentages
+#         # print("Cluster 1 Percentage:", cluster1_percentage)
+#         # print("Cluster 2 Percentage:", cluster2_percentage)
+        
+#         cluster1 = np.reshape(cntr[0,:], converted_img.shape[:-1])
+#         cluster2 = np.reshape(cntr[1,:], converted_img.shape[:-1]) 
+#         target = cluster1
+#         val = filters.threshold_otsu(target)
+#         hist, bins_center = exposure.histogram(target)
+#         plotter(target, val, bins_center, hist)
+
+#         # Save the plots
+#         plt.savefig(os.path.join(output_folder, "plot_{}.png".format(count)))
+
+
+#         update_progress("Progress...{}/{}".format(count + 1, len(filenames)), (count + 1) / len(filenames))
+
+
+#     print()
+#     print("DONE!")
 
 
 
