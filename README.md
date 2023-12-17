@@ -4,7 +4,7 @@
 
 [![License: EUPL-1.2](https://img.shields.io/badge/License-EUPL%20v1.2-blue.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
 
-Command-line software for segmenting segment the vegetation from the RGB image
+Command-line software for segmenting the vegetation from the RGB image
 
 ## New Features
 
