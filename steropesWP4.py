@@ -151,26 +151,6 @@ def change_colorspace(img, to_save_or_not, output_folder, output_save_name, colo
 
 
 
-# def find_optimal_clusters(data, max_clusters=10):
-#     log_message("Finding the optimal number of clusters ...")
-#     inertias = []
-#     for i in range(1, max_clusters + 1):
-#         kmeans = KMeans(n_clusters=i, init='k-means++', random_state=42)
-#         kmeans.fit(data)
-#         inertias.append(kmeans.inertia_)
-    
-#     # Plot the elbow curve
-#     plt.plot(range(1, max_clusters + 1), inertias, marker='o')
-#     plt.xlabel('Number of clusters')
-#     plt.ylabel('Inertia')
-#     plt.title('Elbow Method for Optimal Number of Clusters')
-#     plt.show()
-
-#     # Choose the number of clusters based on the elbow point
-#     optimal_clusters = int(input("Enter the number of clusters based on the elbow point: "))
-#     log_message("The optimal number of clusters is{}".print(optimal_cluster) )
-#     return optimal_clusters
-
 
 def find_optimal_clusters_silhouette(data, max_clusters=10):
     """
@@ -211,7 +191,54 @@ def find_optimal_clusters_silhouette(data, max_clusters=10):
 
 
 
-def kmeans_clustering(img, n_of_clusters, init_value, to_save_or_not, output_save_name):
+# def kmeans_clustering(img, n_of_clusters, init_value, to_save_or_not, output_save_name):
+#     """
+#     Perform k-means clustering on the input image.
+
+#     Args:
+#         img (numpy.ndarray): Input image array.
+#         n_of_clusters (int): Number of clusters to create.
+#         init_value (str): Initialization method for cluster centers. Supported values: 'random', 'k-means++'.
+#         to_save_or_not (bool): Flag indicating whether to save the clustered image.
+#         output_save_name (str): Output save name for the clustered image.
+
+#     Returns:
+#         numpy.ndarray: The clustered image array.
+
+#     Raises:
+#         ValueError: If an unsupported init_value is provided.
+
+#     Notes:
+#         - Supported values for init_value: 'random' or 'k-means++' (default).
+#         - The clustered image is saved if to_save_or_not is True.
+#     """
+#     log_message("kmeans clustering ...")
+
+#     kmeans = KMeans(n_clusters=n_of_clusters, init=init_value)
+
+#     # Flatten the image for clustering
+#     flattened_img = np.reshape(img, (-1, img.shape[2]))
+
+#     # Create a progress bar for iterations
+#     with tqdm(total=kmeans.max_iter * n_of_clusters, desc="KMeans Clustering Progress", ncols=80, mininterval=1.0) as pbar:
+#         kmeans.fit(flattened_img)
+
+#         # Create a progress bar for saving the clustered image
+#         with tqdm(total=img.shape[0], desc="Saving Clustered Image", ncols=80, mininterval=1.0) as save_pbar:
+#             clustered_img = np.reshape(kmeans.predict(flattened_img), img.shape[:-1])
+
+#             if to_save_or_not:
+#                 filename = output_save_name + '_clustered.jpg'
+#                 cv2.imwrite(filename, clustered_img[::-1, ::-1])
+
+#                 save_pbar.update(1)
+
+#             pbar.update(kmeans.n_iter_ * n_of_clusters)
+
+#     log_message("kmeans clustering completed")
+#     return clustered_img
+
+def kmeans_clustering(img, n_of_clusters, init_value='k-means++', to_save_or_not=True, output_save_name=None, verbose=True, n_init=10, n_init_value ='auto'):
     """
     Perform k-means clustering on the input image.
 
@@ -221,30 +248,26 @@ def kmeans_clustering(img, n_of_clusters, init_value, to_save_or_not, output_sav
         init_value (str): Initialization method for cluster centers. Supported values: 'random', 'k-means++'.
         to_save_or_not (bool): Flag indicating whether to save the clustered image.
         output_save_name (str): Output save name for the clustered image.
+        verbose (bool): Whether to display progress bars.
+        n_init (int): Number of times the k-means algorithm will be run with different centroid seeds.
 
     Returns:
-        numpy.ndarray: The clustered image array.
-
-    Raises:
-        ValueError: If an unsupported init_value is provided.
-
-    Notes:
-        - Supported values for init_value: 'random' or 'k-means++' (default).
-        - The clustered image is saved if to_save_or_not is True.
+        tuple: A tuple containing the clustered image array, cluster assignments, and cluster centers (if verbose=True).
     """
-    log_message("kmeans clustering ...")
+    if verbose:
+        log_message("kmeans clustering ...")
 
-    kmeans = KMeans(n_clusters=n_of_clusters, init=init_value)
+    kmeans = KMeans(n_clusters=n_of_clusters, init=init_value, n_init= n_init_value)
 
     # Flatten the image for clustering
     flattened_img = np.reshape(img, (-1, img.shape[2]))
 
     # Create a progress bar for iterations
-    with tqdm(total=kmeans.max_iter * n_of_clusters, desc="KMeans Clustering Progress", ncols=80, mininterval=1.0) as pbar:
+    with tqdm(total=kmeans.max_iter * n_of_clusters, desc="KMeans Clustering Progress", ncols=80, mininterval=1.0, disable=not verbose) as pbar:
         kmeans.fit(flattened_img)
 
         # Create a progress bar for saving the clustered image
-        with tqdm(total=img.shape[0], desc="Saving Clustered Image", ncols=80, mininterval=1.0) as save_pbar:
+        with tqdm(total=img.shape[0], desc="Saving Clustered Image", ncols=80, mininterval=1.0, disable=not verbose) as save_pbar:
             clustered_img = np.reshape(kmeans.predict(flattened_img), img.shape[:-1])
 
             if to_save_or_not:
@@ -255,10 +278,13 @@ def kmeans_clustering(img, n_of_clusters, init_value, to_save_or_not, output_sav
 
             pbar.update(kmeans.n_iter_ * n_of_clusters)
 
-    log_message("kmeans clustering completed")
-    return clustered_img
+    if verbose:
+        log_message("kmeans clustering completed")
 
-
+    if verbose:
+        return clustered_img, kmeans.labels_, kmeans.cluster_centers_
+    else:
+        return clustered_img
 
 
 # def kmeans_clustering(img, n_of_clusters, init_value, to_save_or_not, output_save_name):
@@ -379,6 +405,8 @@ def fuzzy_cmans_automatic_Th(img, n_of_clusters, to_save_or_not, output_save_nam
     # Use np.squeeze to remove singleton dimensions before comparison
     cluster1_img[np.squeeze(u[0]) >= val1] = 1
     cluster2_img[np.squeeze(u[1]) >= val2] = 1
+    # cluster1_img[np.squeeze(u[0], axis=0) >= val1] = 1
+    # cluster2_img[np.squeeze(u[1], axis=0) >= val2] = 1
 
     if to_save_or_not:
         filename = output_save_name + '_cluster1.jpg'
@@ -554,7 +582,7 @@ if __name__ == "__main__":
 
     print("File #:", len(filenames))
 
-    # Rest of the code
+    
     for count, fin in tqdm(enumerate(filenames), total=len(filenames), desc='Processing Images'):
         # Perform image processing operations
         filename = os.path.splitext(os.path.basename(fin))[0]  # Get the filename without extension
@@ -563,7 +591,9 @@ if __name__ == "__main__":
         # hsv, hls, yiq = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0])
         converted_img = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0], args.colorspace)
 
-        clustered_img = kmeans_clustering(converted_img, 2, 'random', False, 'img')
+        #clustered_img = kmeans_clustering(converted_img, 2, 'random', False, 'img')
+        clustered_img, labels, centers = kmeans_clustering(converted_img, 2, 'random', False, 'img', n_init_value ='auto' )
+
 
         # # Call the modified function to find the optimal number of clusters using silhouette score
         # optimal_clusters = find_optimal_clusters_silhouette(clustered_img, max_clusters=10)
@@ -573,8 +603,9 @@ if __name__ == "__main__":
         optimal_clusters = find_optimal_clusters_silhouette(np.reshape(clustered_img, (-1, clustered_img.shape[-1])), max_clusters=10)
 
         #img_cluster1, img_cluster2, cntr, u = fuzzy_cmans_automatic_Th(clustered_img, 2, False, args.colorspace)
-        img_cluster1, img_cluster2, cntr, u = fuzzy_cmans_automatic_Th(clustered_img, optimal_clusters, False, args.colorspace)
-        
+        #img_cluster1, img_cluster2, cntr, u = fuzzy_cmans_automatic_Th(clustered_img, optimal_clusters, False, args.colorspace)
+        img_cluster1, img_cluster2, cntr, u = fuzzy_cmans_automatic_Th(converted_img, optimal_clusters, False, args.colorspace)
+
         # # Calculate cluster percentages
         # #percentages = calculate_cluster_percentages(img_cluster1, img_cluster2)
         # print(u)
