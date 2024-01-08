@@ -364,6 +364,60 @@ def kmeans_clustering(img, n_of_clusters, init_value='k-means++', to_save_or_not
 
 
 
+# def fuzzy_cmans_automatic_Th(img, n_of_clusters, to_save_or_not, output_save_name):
+#     """
+#     Perform fuzzy c-means clustering on the input image.
+
+#     Args:
+#         img (numpy.ndarray): Input image array.
+#         n_of_clusters (int): Number of clusters for the clustering algorithm.
+#         to_save_or_not (bool): Flag indicating whether to save the resulting cluster images.
+#         output_save_name (str): Output save name for the cluster images.
+
+#     Returns:
+#         tuple: A tuple containing the cluster images and the cluster centers.
+#               The first element is the cluster 1 image, the second element is the cluster 2 image,
+#               and the third element is the cluster centers array.
+#     """
+
+#     log_message("fuzzy cmeans clustering ...")
+#     img_shape = img.shape
+#     if len(img_shape) < 3:
+#         img = np.expand_dims(img, axis=2)
+
+#     cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(
+#         np.reshape(img, (-1, img.shape[2])), n_of_clusters, 2, error=0.005, maxiter=1000, init=None
+#     )
+
+#     cluster1 = np.reshape(cntr[0, :], img.shape[:-1])
+#     cluster2 = np.reshape(cntr[1, :], img.shape[:-1])
+
+#     # Compute the threshold based on a percentage of the maximum membership value
+#     threshold_percentage = 95
+#     max_val1 = np.max(u[0])
+#     max_val2 = np.max(u[1])
+#     val1 = max_val1 * threshold_percentage / 100
+#     val2 = max_val2 * threshold_percentage / 100
+
+#     cluster1_img = np.zeros_like(cluster1)
+#     cluster2_img = np.zeros_like(cluster2)
+
+#     # Use np.squeeze to remove singleton dimensions before comparison
+#     cluster1_img[np.squeeze(u[0]) >= val1] = 1
+#     cluster2_img[np.squeeze(u[1]) >= val2] = 1
+#     # cluster1_img[np.squeeze(u[0], axis=0) >= val1] = 1
+#     # cluster2_img[np.squeeze(u[1], axis=0) >= val2] = 1
+
+#     if to_save_or_not:
+#         filename = output_save_name + '_cluster1.jpg'
+#         cv2.imwrite(filename, cluster1_img * 255)  # Multiply by 255 to convert binary to 8-bit image
+
+#         filename = output_save_name + '_cluster2.jpg'
+#         cv2.imwrite(filename, cluster2_img * 255)  # Multiply by 255 to convert binary to 8-bit image
+
+#     log_message("fuzzy cmeans clustering completed")
+#     return cluster1_img, cluster2_img, cntr, u
+
 def fuzzy_cmans_automatic_Th(img, n_of_clusters, to_save_or_not, output_save_name):
     """
     Perform fuzzy c-means clustering on the input image.
@@ -376,8 +430,6 @@ def fuzzy_cmans_automatic_Th(img, n_of_clusters, to_save_or_not, output_save_nam
 
     Returns:
         tuple: A tuple containing the cluster images and the cluster centers.
-              The first element is the cluster 1 image, the second element is the cluster 2 image,
-              and the third element is the cluster centers array.
     """
 
     log_message("fuzzy cmeans clustering ...")
@@ -389,34 +441,25 @@ def fuzzy_cmans_automatic_Th(img, n_of_clusters, to_save_or_not, output_save_nam
         np.reshape(img, (-1, img.shape[2])), n_of_clusters, 2, error=0.005, maxiter=1000, init=None
     )
 
-    cluster1 = np.reshape(cntr[0, :], img.shape[:-1])
-    cluster2 = np.reshape(cntr[1, :], img.shape[:-1])
+    # Reshape u to match the original image shape for each cluster
+    u_reshaped = u.reshape(n_of_clusters, img_shape[0], img_shape[1])
 
-    # Compute the threshold based on a percentage of the maximum membership value
-    threshold_percentage = 95
-    max_val1 = np.max(u[0])
-    max_val2 = np.max(u[1])
-    val1 = max_val1 * threshold_percentage / 100
-    val2 = max_val2 * threshold_percentage / 100
+    cluster_images = []
+    for i in range(n_of_clusters):
+        cluster_img = np.zeros((img_shape[0], img_shape[1]))
+        threshold = filters.threshold_otsu(u_reshaped[i])
 
-    cluster1_img = np.zeros_like(cluster1)
-    cluster2_img = np.zeros_like(cluster2)
+        # Apply threshold to create a binary image for each cluster
+        cluster_img[u_reshaped[i] >= threshold] = 1
 
-    # Use np.squeeze to remove singleton dimensions before comparison
-    cluster1_img[np.squeeze(u[0]) >= val1] = 1
-    cluster2_img[np.squeeze(u[1]) >= val2] = 1
-    # cluster1_img[np.squeeze(u[0], axis=0) >= val1] = 1
-    # cluster2_img[np.squeeze(u[1], axis=0) >= val2] = 1
+        if to_save_or_not:
+            filename = f"{output_save_name}_cluster{i + 1}.jpg"
+            cv2.imwrite(filename, (cluster_img * 255).astype(np.uint8))
 
-    if to_save_or_not:
-        filename = output_save_name + '_cluster1.jpg'
-        cv2.imwrite(filename, cluster1_img * 255)  # Multiply by 255 to convert binary to 8-bit image
-
-        filename = output_save_name + '_cluster2.jpg'
-        cv2.imwrite(filename, cluster2_img * 255)  # Multiply by 255 to convert binary to 8-bit image
+        cluster_images.append(cluster_img)
 
     log_message("fuzzy cmeans clustering completed")
-    return cluster1_img, cluster2_img, cntr, u
+    return cluster_images, cntr
 
 
 
@@ -582,68 +625,119 @@ if __name__ == "__main__":
 
     print("File #:", len(filenames))
 
-    
-    for count, fin in tqdm(enumerate(filenames), total=len(filenames), desc='Processing Images'):
-        # Perform image processing operations
-        filename = os.path.splitext(os.path.basename(fin))[0]  # Get the filename without extension
-        img = imread_func(fin, True)
-        img = im2double_func(img)
-        # hsv, hls, yiq = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0])
-        converted_img = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0], args.colorspace)
+   # ... [earlier code] ...
 
-        #clustered_img = kmeans_clustering(converted_img, 2, 'random', False, 'img')
-        clustered_img, labels, centers = kmeans_clustering(converted_img, 2, 'random', False, 'img', n_init_value ='auto' )
+for count, fin in tqdm(enumerate(filenames), total=len(filenames), desc='Processing Images'):
+    # Perform image processing operations
+    filename = os.path.splitext(os.path.basename(fin))[0]  # Get the filename without extension
+    img = imread_func(fin, True)
+    img = im2double_func(img)
+    converted_img = change_colorspace(img, True, output_folder, filename, args.colorspace)
 
+    clustered_img, labels, centers = kmeans_clustering(converted_img, 2, 'random', False, 'img', n_init_value='auto')
 
-        # # Call the modified function to find the optimal number of clusters using silhouette score
-        # optimal_clusters = find_optimal_clusters_silhouette(clustered_img, max_clusters=10)
+    # Call the function to find the optimal number of clusters using silhouette score
+    optimal_clusters = find_optimal_clusters_silhouette(np.reshape(clustered_img, (-1, clustered_img.shape[-1])), max_clusters=10)
 
+    # Using the fuzzy c-means clustering function and extracting first two clusters
+    cluster_images, cntr = fuzzy_cmans_automatic_Th(converted_img, optimal_clusters, False, filename)
+    img_cluster1 = cluster_images[0] if len(cluster_images) > 0 else None
+    img_cluster2 = cluster_images[1] if len(cluster_images) > 1 else None
 
-        # Call the function to find the optimal number of clusters using silhouette score
-        optimal_clusters = find_optimal_clusters_silhouette(np.reshape(clustered_img, (-1, clustered_img.shape[-1])), max_clusters=10)
+    # Calculate cluster percentages and pixel counts
+    # Note: This part of code might need adjustment as 'u' is not returned from the revised function
+    # total_pixels = img.shape[0] * img.shape[1]
+    # percentages = calculate_cluster_percentages(u, total_pixels)
+    # pixel_counts = calculate_cluster_pixel_counts(u)
 
-        #img_cluster1, img_cluster2, cntr, u = fuzzy_cmans_automatic_Th(clustered_img, 2, False, args.colorspace)
-        #img_cluster1, img_cluster2, cntr, u = fuzzy_cmans_automatic_Th(clustered_img, optimal_clusters, False, args.colorspace)
-        img_cluster1, img_cluster2, cntr, u = fuzzy_cmans_automatic_Th(converted_img, optimal_clusters, False, args.colorspace)
+    # Export percentages to CSV file
+    csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
+    with open(csv_filename, 'a', newline='') as csvfile:
+        fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        if count == 0:
+            writer.writeheader()
+        writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
 
-        # # Calculate cluster percentages
-        # #percentages = calculate_cluster_percentages(img_cluster1, img_cluster2)
-        # print(u)
-
-        # percentages = calculate_cluster_percentages(u)
-
-        # Calculate cluster percentages
-        total_pixels = img.shape[0] * img.shape[1]
-        percentages = calculate_cluster_percentages(u, total_pixels)
-
-        # Calculate cluster pixel counts
-        pixel_counts = calculate_cluster_pixel_counts(u)
-
-        # Print the exact number of pixels in each cluster
-        for cluster, count in pixel_counts.items():
-            print(f"{cluster}: {count} pixels")
-
-
-        # Export percentages to CSV file
-        csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
-        with open(csv_filename, 'a', newline='') as csvfile:
-            fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            if count == 0:
-                writer.writeheader()
-            writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
-
-        cluster1 = np.reshape(cntr[0, :], converted_img.shape[:-1])
-        cluster2 = np.reshape(cntr[1, :], converted_img.shape[:-1])
-        target = cluster1
+    # Plotting (if you are still using these plots)
+    if img_cluster1 is not None:
+        target = img_cluster1
         val = filters.threshold_otsu(target)
         hist, bins_center = exposure.histogram(target)
-        plotter(target, val, bins_center, hist, save_path=os.path.join(output_folder, f"plot_{filename}.png"))
+        plotter(target, val, bins_center, hist, save_path=os.path.join(output_folder, f"plot_{filename}_cluster1.png"))
+    
+    if img_cluster2 is not None:
+        target = img_cluster2
+        val = filters.threshold_otsu(target)
+        hist, bins_center = exposure.histogram(target)
+        plotter(target, val, bins_center, hist, save_path=os.path.join(output_folder, f"plot_{filename}_cluster2.png"))
 
-        # # Save the plots
-        # plt.savefig(os.path.join(output_folder, "plot_{}.png".format(count)))
+    # update_progress("Progress...{}/{}".format(count + 1, len(filenames)), (count + 1) / len(filenames))
 
-       # update_progress("Progress...{}/{}".format(count + 1, len(filenames)), (count + 1) / len(filenames))
+print()
+print("DONE!")
+ 
+    # for count, fin in tqdm(enumerate(filenames), total=len(filenames), desc='Processing Images'):
+    #     # Perform image processing operations
+    #     filename = os.path.splitext(os.path.basename(fin))[0]  # Get the filename without extension
+    #     img = imread_func(fin, True)
+    #     img = im2double_func(img)
+    #     # hsv, hls, yiq = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0])
+    #     converted_img = change_colorspace(img, True, output_folder, os.path.splitext(os.path.basename(fin))[0], args.colorspace)
 
-    print()
-    print("DONE!")
+    #     #clustered_img = kmeans_clustering(converted_img, 2, 'random', False, 'img')
+    #     clustered_img, labels, centers = kmeans_clustering(converted_img, 2, 'random', False, 'img', n_init_value ='auto' )
+
+
+    #     # # Call the modified function to find the optimal number of clusters using silhouette score
+    #     # optimal_clusters = find_optimal_clusters_silhouette(clustered_img, max_clusters=10)
+
+
+    #     # Call the function to find the optimal number of clusters using silhouette score
+    #     optimal_clusters = find_optimal_clusters_silhouette(np.reshape(clustered_img, (-1, clustered_img.shape[-1])), max_clusters=10)
+
+    #     #img_cluster1, img_cluster2, cntr, u = fuzzy_cmans_automatic_Th(clustered_img, 2, False, args.colorspace)
+    #     #img_cluster1, img_cluster2, cntr, u = fuzzy_cmans_automatic_Th(clustered_img, optimal_clusters, False, args.colorspace)
+    #     img_cluster1, img_cluster2, cntr, u = fuzzy_cmans_automatic_Th(converted_img, optimal_clusters, False, args.colorspace)
+
+    #     # # Calculate cluster percentages
+    #     # #percentages = calculate_cluster_percentages(img_cluster1, img_cluster2)
+    #     # print(u)
+
+    #     # percentages = calculate_cluster_percentages(u)
+
+    #     # Calculate cluster percentages
+    #     total_pixels = img.shape[0] * img.shape[1]
+    #     percentages = calculate_cluster_percentages(u, total_pixels)
+
+    #     # Calculate cluster pixel counts
+    #     pixel_counts = calculate_cluster_pixel_counts(u)
+
+    #     # Print the exact number of pixels in each cluster
+    #     for cluster, count in pixel_counts.items():
+    #         print(f"{cluster}: {count} pixels")
+
+
+    #     # Export percentages to CSV file
+    #     csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
+    #     with open(csv_filename, 'a', newline='') as csvfile:
+    #         fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
+    #         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    #         if count == 0:
+    #             writer.writeheader()
+    #         writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
+
+    #     cluster1 = np.reshape(cntr[0, :], converted_img.shape[:-1])
+    #     cluster2 = np.reshape(cntr[1, :], converted_img.shape[:-1])
+    #     target = cluster1
+    #     val = filters.threshold_otsu(target)
+    #     hist, bins_center = exposure.histogram(target)
+    #     plotter(target, val, bins_center, hist, save_path=os.path.join(output_folder, f"plot_{filename}.png"))
+
+    #     # # Save the plots
+    #     # plt.savefig(os.path.join(output_folder, "plot_{}.png".format(count)))
+
+    #    # update_progress("Progress...{}/{}".format(count + 1, len(filenames)), (count + 1) / len(filenames))
+
+    # print()
+    # print("DONE!")
