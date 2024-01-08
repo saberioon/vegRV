@@ -14,6 +14,7 @@ from steropesWP4 import (
 )
 
 
+
 class TestYourScript(unittest.TestCase):
     def setUp(self):
         # Set up any necessary resources or configurations before each test
@@ -43,28 +44,20 @@ class TestYourScript(unittest.TestCase):
         self.assertIsInstance(clustered_img, np.ndarray)
 
     def test_fuzzy_cmans_automatic_Th(self):
-        # Replace this path with the actual path to your test image
-        img_path = 'exampleFiles/K_1_62_2.JPG'
-        rotate_to_original = True  # Adjust this based on your requirement
-
-        img = imread_func(img_path, rotate_to_original)
+        # Test for fuzzy_cmans_automatic_Th function
+        img = imread_func(self.test_image_path, True)
+        img_double = im2double_func(img)
 
         # Call the fuzzy_cmans_automatic_Th function
-        result = fuzzy_cmans_automatic_Th(img, 2, False, 'test')
+        cluster_images, cntr = fuzzy_cmans_automatic_Th(img_double, 2, False, 'test')
 
-        if result is not None:
-            cluster1_img, cluster2_img, cntr, u = result
+        self.assertIsNotNone(cluster_images)
+        self.assertTrue(len(cluster_images) > 0)
+        for cluster_img in cluster_images:
+            self.assertIsInstance(cluster_img, np.ndarray)
+            self.assertEqual(cluster_img.shape, img_double.shape[:-1])
 
-            # Add assertions for shapes
-            self.assertEqual(cluster1_img.shape, (expected_shape1))
-            self.assertEqual(cluster2_img.shape, (expected_shape2))
-            # Add more assertions as needed...
-
-            # Rest of your test code for fuzzy_cmans_automatic_Th...
-        else:
-            print("Error: fuzzy_cmans_automatic_Th returned None. Check logs for details.")
-            self.fail("fuzzy_cmans_automatic_Th failed")
-
+        self.assertIsInstance(cntr, np.ndarray)
 
 
     def test_calculate_cluster_percentages(self):
