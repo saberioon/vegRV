@@ -634,6 +634,9 @@ if __name__ == "__main__":
 
     # Process each file
     for count, fin in tqdm(enumerate(filenames), total=len(filenames), desc='Processing Images'):
+        # Initialize percentages dictionary
+        # percentages = {}
+
         # Perform image processing operations
         filename = os.path.splitext(os.path.basename(fin))[0]  # Get the filename without extension
         img = imread_func(fin, True)
@@ -650,20 +653,38 @@ if __name__ == "__main__":
         img_cluster1 = cluster_images[0] if len(cluster_images) > 0 else None
         img_cluster2 = cluster_images[1] if len(cluster_images) > 1 else None
 
+
         # Calculate cluster percentages and pixel counts
-        # Note: This part of code might need adjustment as 'u' is not returned from the revised function
+        if len(cluster_images) > 0:
+            total_pixels = img.shape[0] * img.shape[1]
+            u = cntr
+            percentages = calculate_cluster_percentages(u, total_pixels)
+            pixel_counts = calculate_cluster_pixel_counts(u)
+
+            # Export percentages to CSV file
+            csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
+            with open(csv_filename, 'a', newline='') as csvfile:
+                fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                if count == 0:
+                    writer.writeheader()
+                writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
+
+
+        # # Calculate cluster percentages and pixel counts
+        # # Note: This part of code might need adjustment as 'u' is not returned from the revised function
         # total_pixels = img.shape[0] * img.shape[1]
         # percentages = calculate_cluster_percentages(u, total_pixels)
         # pixel_counts = calculate_cluster_pixel_counts(u)
 
-        # Export percentages to CSV file
-        csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
-        with open(csv_filename, 'a', newline='') as csvfile:
-            fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            if count == 0:
-                writer.writeheader()
-            writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
+        # # Export percentages to CSV file
+        # csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
+        # with open(csv_filename, 'a', newline='') as csvfile:
+        #     fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
+        #     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        #     if count == 0:
+        #         writer.writeheader()
+        #     writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
 
         # Plotting (if you are still using these plots)
         if img_cluster1 is not None:
