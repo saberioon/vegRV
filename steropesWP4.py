@@ -653,22 +653,58 @@ if __name__ == "__main__":
         img_cluster1 = cluster_images[0] if len(cluster_images) > 0 else None
         img_cluster2 = cluster_images[1] if len(cluster_images) > 1 else None
 
-
-        # Calculate cluster percentages and pixel counts
         if len(cluster_images) > 0:
             total_pixels = img.shape[0] * img.shape[1]
-            u = cntr
-            percentages = calculate_cluster_percentages(u, total_pixels)
-            pixel_counts = calculate_cluster_pixel_counts(u)
+            total = 0
+            for i in range(0, 10):
+                percentage = np.sum(cluster_images[i]) / total_pixels
+                percentage_int = int(round(percentage * 100))  # Convert to integer percentage
+                total += percentage_int  # Add integer percentage to total
+                print(str(percentage_int))  # Print integer percentage
 
-            # Export percentages to CSV file
-            csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
-            with open(csv_filename, 'a', newline='') as csvfile:
-                fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                if count == 0:
-                    writer.writeheader()
-                writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
+                # Export percentages to CSV file
+                csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
+                with open(csv_filename, 'a', newline='') as csvfile:
+                    fieldnames = ['Filename'] + list(percentage_int.keys())  # Include 'Filename' as a fieldname
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                    if count == 0:
+                        writer.writeheader()
+                    writer.writerow({'Filename': filename, **percentage_int})  # Include the filename in the row
+
+
+
+        # # Calculate cluster percentages and pixel counts
+        # if len(cluster_images) > 0:
+        #     total_pixels = img.shape[0] * img.shape[1]
+        #     total = 0
+        # for i in range(0,10):
+        #     print(str(np.sum(cluster_images[i])/total_pixels))
+        #     total = total + np.sum(cluster_images[i])/total_pixels # convert float to integrate 
+            
+        #         # Export percentages to CSV file
+        #     csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
+        #     with open(csv_filename, 'a', newline='') as csvfile:
+        #         fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
+        #         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        #         if count == 0:
+        #             writer.writeheader()
+        #         writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
+
+        # # Calculate cluster percentages and pixel counts
+        # if len(cluster_images) > 0:
+        #     total_pixels = img.shape[0] * img.shape[1]
+        #     u = cntr
+        #     percentages = calculate_cluster_percentages(u, total_pixels)
+        #     pixel_counts = calculate_cluster_pixel_counts(u)
+
+        #     # Export percentages to CSV file
+        #     csv_filename = os.path.join(output_folder, "cluster_percentages.csv")
+        #     with open(csv_filename, 'a', newline='') as csvfile:
+        #         fieldnames = ['Filename'] + list(percentages.keys())  # Include 'Filename' as a fieldname
+        #         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        #         if count == 0:
+        #             writer.writeheader()
+        #         writer.writerow({'Filename': filename, **percentages})  # Include the filename in the row
 
 
         # # Calculate cluster percentages and pixel counts
