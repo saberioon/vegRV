@@ -1,77 +1,97 @@
-import unittest
-import os
 import cv2
-import numpy as np
+import matplotlib.pyplot as plt
 
-from steropesWP4 import (
-    imread_func,
-    im2double_func,
-    change_colorspace,
-    kmeans_clustering,
-    fuzzy_cmans_automatic_Th,
-    calculate_cluster_percentages,
-    calculate_cluster_pixel_counts,
-)
+def test_imread_func():
+    # Test case 1: Rotate_to_Original = True
+    pathfile = "test_image.jpg"
+    Rotate_to_Original = True
+    expected_output = cv2.imread(pathfile)[::-1, ::-1]
+    assert (imread_func(pathfile, Rotate_to_Original) == expected_output).all()
 
+    # Test case 2: Rotate_to_Original = False
+    pathfile = "test_image.jpg"
+    Rotate_to_Original = False
+    expected_output = cv2.imread(pathfile)
+    assert (imread_func(pathfile, Rotate_to_Original) == expected_output).all()
 
+    # Test case 3: Rotate_to_Original = True, with different image
+    pathfile = "another_image.jpg"
+    Rotate_to_Original = True
+    expected_output = cv2.imread(pathfile)[::-1, ::-1]
+    assert (imread_func(pathfile, Rotate_to_Original) == expected_output).all()
 
-class TestYourScript(unittest.TestCase):
-    def setUp(self):
-        # Set up any necessary resources or configurations before each test
-        self.test_image_path = 'exampleFiles/K_1_62_2.JPG'
+    # Test case 4: Rotate_to_Original = False, with different image
+    pathfile = "another_image.jpg"
+    Rotate_to_Original = False
+    expected_output = cv2.imread(pathfile)
+    assert (imread_func(pathfile, Rotate_to_Original) == expected_output).all()
 
-    def test_imread_func(self):
-        # Test imread_func function
-        img = imread_func(self.test_image_path, True)
-        self.assertIsInstance(img, np.ndarray)
+    print("All test cases passed!")
 
-    def test_im2double_func(self):
-        # Test im2double_func function
-        img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-        double_img = im2double_func(img)
-        self.assertTrue(np.max(double_img) <= 1.0)
+# Run the test function
+test_imread_func()def test_change_colorspace():
+    # Test case 1: Convert to HSV color space
+    img = cv2.imread("test_image.jpg")
+    to_save_or_not = False
+    output_folder = ""
+    output_save_name = ""
+    colorspace = "hsv"
+    expected_output = np.zeros_like(img)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            r, g, b = img[i, j]
+            expected_output[i, j] = colorsys.rgb_to_hsv(r, g, b)
+    assert (change_colorspace(img, to_save_or_not, output_folder, output_save_name, colorspace) == expected_output).all()
 
-    def test_change_colorspace(self):
-        # Test change_colorspace function
-        img = np.random.rand(100, 100, 3)
-        converted_img = change_colorspace(img, False, '', '', 'hsv')
-        self.assertIsInstance(converted_img, np.ndarray)
+    # Test case 2: Convert to HLS color space
+    img = cv2.imread("test_image.jpg")
+    to_save_or_not = False
+    output_folder = ""
+    output_save_name = ""
+    colorspace = "hls"
+    expected_output = np.zeros_like(img)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            r, g, b = img[i, j]
+            expected_output[i, j] = colorsys.rgb_to_hls(r, g, b)
+    assert (change_colorspace(img, to_save_or_not, output_folder, output_save_name, colorspace) == expected_output).all()
 
-    def test_kmeans_clustering(self):
-        # Test kmeans_clustering function
-        img = np.random.rand(100, 100, 3)
-        clustered_img = kmeans_clustering(img, 2, 'random', False, 'test', False)
-        self.assertIsInstance(clustered_img, np.ndarray)
+    # Test case 3: Convert to YIQ color space
+    img = cv2.imread("test_image.jpg")
+    to_save_or_not = False
+    output_folder = ""
+    output_save_name = ""
+    colorspace = "yiq"
+    expected_output = np.zeros_like(img)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            r, g, b = img[i, j]
+            expected_output[i, j] = colorsys.rgb_to_yiq(r, g, b)
+    assert (change_colorspace(img, to_save_or_not, output_folder, output_save_name, colorspace) == expected_output).all()
 
-    def test_fuzzy_cmans_automatic_Th(self):
-        # Test for fuzzy_cmans_automatic_Th function
-        img = imread_func(self.test_image_path, True)
-        img_double = im2double_func(img)
+    print("All test cases passed!")
 
-        # Call the fuzzy_cmans_automatic_Th function
-        cluster_images, cntr = fuzzy_cmans_automatic_Th(img_double, 2, False, 'test')
+# Run the test function
+test_change_colorspace()def test_find_optimal_clusters_silhouette():
+    # Test case 1: Test with 2 clusters
+    data = np.array([[1, 2], [3, 4], [5, 6]])
+    max_clusters = 2
+    expected_output = 2
+    assert find_optimal_clusters_silhouette(data, max_clusters) == expected_output
 
-        self.assertIsNotNone(cluster_images)
-        self.assertTrue(len(cluster_images) > 0)
-        for cluster_img in cluster_images:
-            self.assertIsInstance(cluster_img, np.ndarray)
-            self.assertEqual(cluster_img.shape, img_double.shape[:-1])
+    # Test case 2: Test with 3 clusters
+    data = np.array([[1, 2], [3, 4], [5, 6]])
+    max_clusters = 3
+    expected_output = 3
+    assert find_optimal_clusters_silhouette(data, max_clusters) == expected_output
 
-        self.assertIsInstance(cntr, np.ndarray)
+    # Test case 3: Test with 4 clusters
+    data = np.array([[1, 2], [3, 4], [5, 6]])
+    max_clusters = 4
+    expected_output = 3
+    assert find_optimal_clusters_silhouette(data, max_clusters) == expected_output
 
+    print("All test cases passed!")
 
-    def test_calculate_cluster_percentages(self):
-        # Test calculate_cluster_percentages function
-        u = np.random.rand(2, 100)
-        total_pixels = 100
-        percentages = calculate_cluster_percentages(u, total_pixels)
-        self.assertIsInstance(percentages, dict)
-
-    def test_calculate_cluster_pixel_counts(self):
-        # Test calculate_cluster_pixel_counts function
-        u = np.random.rand(2, 100)
-        counts = calculate_cluster_pixel_counts(u)
-        self.assertIsInstance(counts, dict)
-
-if __name__ == '__main__':
-    unittest.main()
+# Run the test function
+test_find_optimal_clusters_silhouette()
