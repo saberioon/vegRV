@@ -23,6 +23,8 @@ from sklearn.metrics import silhouette_score
 from tqdm import tqdm
 import os
 #from sklearn.cluster import DBSCAN
+from sklearn.utils import shuffle
+from sklearn.mixture import GaussianMixture
 
 
 # -------------- These two libraris are for showing the progress------------------
@@ -290,6 +292,56 @@ def fuzzy_cmans_automatic_Th(img, n_of_clusters, to_save_or_not, output_save_nam
     return cluster_images, cntr
 
 
+def perform_gmm_segmentation(converted_img, min_clusters=2, max_clusters=5):
+    """
+    Perform Gaussian Mixture Model (GMM) segmentation on the input image.
+
+    Args:
+        converted_img (numpy.ndarray): Input image array in the desired color space.
+        min_clusters (int): Minimum number of clusters for GMM.
+        max_clusters (int): Maximum number of clusters for GMM.
+
+    Returns:
+        tuple: A tuple containing the best GMM model, the segmented image, and the best number of clusters.
+    """
+    log_message("GMM segmentation ...")
+
+    # Reshape image dimension for processing
+    image_reshaped = np.reshape(converted_img, (-1, 3))
+    image_reshaped = shuffle(image_reshaped)
+
+    # Initialize variables to store best GMM and its silhouette score
+    best_gmm = None
+    best_silhouette_score = -1
+    best_n_clusters = None
+
+    # Create a progress bar for the GMM fitting process
+    with tqdm(total=max_clusters - min_clusters + 1, desc="GMM Fitting Progress", ncols=80, mininterval=1.0) as pbar:
+        # Fit Gaussian Mixture Model (GMM) to each number of clusters
+        for n_clusters in range(min_clusters, max_clusters + 1):
+            # Fit GMM
+            gmm = GaussianMixture(n_components=n_clusters, random_state=42)
+            gmm.fit(image_reshaped)
+
+            # Predict cluster labels
+            gmm_labels = gmm.predict(image_reshaped)
+
+            # Compute silhouette score
+            silhouette = silhouette_score(image_reshaped, gmm_labels)
+
+            # Check if silhouette score is better than the current best
+            if silhouette > best_silhouette_score:
+                best_silhouette_score = silhouette
+                best_gmm = gmm
+                best_n_clusters = n_clusters
+
+            # Update the progress bar
+            pbar.update(1)
+
+    # Generate segmented image using the best GMM model
+    segmented_image = np.reshape(best_gmm.predict(image_reshaped), converted_img.shape[:2])
+
+    return best_gmm, segmented_image, best_n_clusters
 
 
 
@@ -400,21 +452,29 @@ if __name__ == "__main__":
         img = im2double_func(img)
         converted_img = change_colorspace(img, True, output_folder, filename, args.colorspace)
 
-        clustered_img, labels, centers = kmeans_clustering(converted_img, 2, 'random', False, 'img', n_init_value='auto')
+        # clustered_img, labels, centers = kmeans_clustering(converted_img, 2, 'random', False, 'img', n_init_value='auto')
+
+
+
+        # perform the GMM segmentation
+        best_gmm, segmented_image, best_n_clusters = perform_gmm_segmentation(converted_img)
+        # Print the best number of clusters
+        print("Best Number of Clusters:", best_n_clusters)
+
 
         # Call the function to find the optimal number of clusters using silhouette score
-        optimal_clusters = find_optimal_clusters_silhouette(np.reshape(clustered_img, (-1, clustered_img.shape[-1])), max_clusters=10)
+        # optimal_clusters = find_optimal_clusters_silhouette(np.reshape(clustered_img, (-1, clustered_img.shape[-1])), max_clusters=10)
 
         # Using the fuzzy c-means clustering function and extracting first two clusters
-        cluster_images, cntr = fuzzy_cmans_automatic_Th(converted_img, optimal_clusters, False, filename)
-        img_cluster1 = cluster_images[0] if len(cluster_images) > 0 else None
-        img_cluster2 = cluster_images[1] if len(cluster_images) > 1 else None
+        #cluster_images, cntr = fuzzy_cmans_automatic_Th(converted_img, optimal_clusters, False, filename)
+        img_cluster1 = segmented_image[0] if len(segmented_image) > 0 else None
+        img_cluster2 = segmented_image[1] if len(segmented_image) > 1 else None
 
-        if len(cluster_images) > 0:
+        if len(segmented_image) > 0:
             total_pixels = img.shape[0] * img.shape[1]
             total = 0
             for i in range(0, 10):
-                percentage = np.sum(cluster_images[i]) / total_pixels
+                percentage = np.sum(segmented_image[i]) / total_pixels
                 percentage_int = int(round(percentage * 100))  # Convert to integer percentage
                 total += percentage_int  # Add integer percentage to total
                 print(str(percentage_int))  # Print integer percentage
